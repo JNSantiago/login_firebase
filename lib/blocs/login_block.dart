@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:bloc_pattern/bloc_pattern.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:rxdart/rxdart.dart';
@@ -23,10 +25,12 @@ class LoginBloc extends BlocBase with LoginValidators {
   Function(String) get changeEmail => _emailController.sink.add;
   Function(String) get changePassword => _passwordController.sink.add;
 
+  StreamSubscription _streamSubscription;
+
   LoginBloc() {
-    FirebaseAuth.instance.onAuthStateChanged.listen((user) {
+    _streamSubscription = FirebaseAuth.instance.onAuthStateChanged.listen((user) {
       if(user != null) {
-        print('logou');
+        _stateController.add(LoginState.SUCCESS);
       } else {
         _stateController.add(LoginState.IDLE);
       }
@@ -38,6 +42,7 @@ class LoginBloc extends BlocBase with LoginValidators {
     final password = _passwordController.value;
 
     _stateController.add(LoginState.LOADING);
+    print('autenticando');
 
     FirebaseAuth.instance
         .signInWithEmailAndPassword(email: email, password: password)
@@ -51,5 +56,7 @@ class LoginBloc extends BlocBase with LoginValidators {
     _emailController.close();
     _passwordController.close();
     _stateController.close();
+
+    _streamSubscription.cancel();
   }
 }
